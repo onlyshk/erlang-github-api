@@ -22,10 +22,11 @@ make
   
 ## Usage
 Example for usage, Get gist description:
-```
+
+```erlang
 1> gist:get_gist_description(1).
 
-"\"the meaning of gist\""
+["the meaning of gist"]
 ```
   
 ## Dependency

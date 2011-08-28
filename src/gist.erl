@@ -48,7 +48,9 @@ get_gist_description(Id) ->
 	case GetGist of
 		{ok, "200", _, Content} ->
 			SplitingPart = string:tokens(Content, ":"),
-			lists:nth(1,string:tokens(lists:nth(2, SplitingPart), ","));
+			GetDescrtion = lists:nth(1,string:tokens(lists:nth(2, SplitingPart), ",")),
+			utils:clean_quotes(GetDescrtion);
 		_ ->
-			io:format("Gist getting error")
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+								   "obtaining error")
 	end.
