@@ -30,7 +30,11 @@ Example for usage, Get gist description:
 
 2> gist:get_gist_pull_url(1).
 
-["["git://gist.github.com/1.git"]"]
+["git://gist.github.com/1.git"]
+
+3> gist:is_public(1).
+
+true
 ```
   
 ## Dependency

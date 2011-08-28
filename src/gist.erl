@@ -11,6 +11,10 @@
 -export([get_gist_pull_url/1]).
 -export([get_gist_content/1]).
 -export([get_gist_description/1]).
+-export([get_gist_push_url/1]).
+-export([get_comments_count/1]).
+-export([get_created_time/1]).
+-export([is_public/1]).
 
 -define(GIST, "https://api.github.com/gists/").
 
@@ -72,7 +76,7 @@ get_gist_pull_url(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    	Rstr = string:rstr(Content, "\"git_pull_url\""),
+	    	        Rstr = string:rstr(Content, "\"git_pull_url\""),
 			%
 			% Get sub_string to "git_pull_url"
 			%
@@ -86,6 +90,165 @@ get_gist_pull_url(Id) ->
 			%
 			Path = lists:nth(1,string:tokens(lists:nth(3, Tokens), ",")),
 			utils:clean_quotes(lists:nth(2, Tokens) ++ ":" ++ Path);
+		_ ->
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+								   "obtaining error")
+	end.
+
+%%
+%% @spec get_gist_push_url(Id) -> ["Url"]
+%% @doc - Get gist push url
+%% @type - Id = Int
+%% @type - Url = String
+%%
+get_gist_push_url(Id) ->
+	TryGetGist = get_gist(Id),
+	case TryGetGist of
+		{ok, "200", _, Content} ->
+			%
+			% find git_pull_url tag
+			%
+	    	        Rstr = string:rstr(Content, "\"git_push_url\""),
+			%
+			% Get sub_string to "git_pull_url"
+			%
+			SubString = string:sub_string(Content, Rstr),
+			%
+			% Split by ":"
+			%
+			Tokens = string:tokens(SubString, ":"),
+			%
+			% Form path
+			%
+			Path = lists:nth(1,string:tokens(lists:nth(3, Tokens), ",")),
+			utils:clean_quotes(lists:nth(2, Tokens) ++ ":" ++ Path);
+		_ ->
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+								   "obtaining error")
+	end.
+
+%%
+%% @spec get_comments_count(Id) -> CommentsCount
+%% @doc - Get gist comments count
+%% @type - Id = Int
+%% @type - CommentsCount = Int
+%%
+get_comments_count(Id) ->
+	TryGetGist = get_gist(Id),
+	case TryGetGist of
+		{ok, "200", _, Content} ->
+			%
+			% find git_pull_url tag
+			%
+	    	        Rstr = string:rstr(Content, "\"comments\""),
+			%
+			% Get sub_string to "git_pull_url"
+			%
+			SubString = string:sub_string(Content, Rstr),
+			%
+			% Split by ":"
+			%
+			Tokens = string:tokens(SubString, ":"),
+			%
+			% Form path
+			%
+			Path = lists:nth(1,string:tokens(lists:nth(3, Tokens), ",")),
+			CountWithGb = utils:clean_quotes(lists:nth(2, Tokens) ++ ":" ++ Path),
+			Comments = lists:nth(1,string:tokens(lists:nth(1, CountWithGb), ",")),
+		    {CommentsCount, _} = string:to_integer(Comments),
+			CommentsCount;
+		_ ->
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+								   "obtaining error")
+	end.
+
+%%
+%% @spec get_created_time(Id) -> [{Year, Month, Day}, {Hour, Minute}]
+%% @doc - Get created time of this gist
+%% @type - Id = Int
+%% @type - Year = Int
+%% @type - Month = Int
+%% @type - Day = Int
+%% @type - Hour = Int
+%% @type - Minute = Int
+%%
+get_created_time(Id) ->
+	TryGetGist = get_gist(Id),
+	case TryGetGist of
+		{ok, "200", _, Content} ->
+			%
+			% find git_pull_url tag
+			%
+	    	        Rstr = string:rstr(Content, "created_at"),
+			ForksRstr = string:rstr(Content, "forks"),
+			if
+				ForksRstr > Rstr ->
+					SubString = string:sub_string(Content, Rstr),
+					%
+					% Split by ":"
+					%
+					Tokens = string:tokens(SubString, ":"),
+					%
+					% Form path
+					%
+					Path = lists:nth(1,string:tokens(lists:nth(3, Tokens), ",")),
+					%
+					% Split by :
+					%
+					CreatedAt = utils:clean_quotes(lists:nth(2, Tokens) ++ ":" ++ Path),
+					%
+					% Split time in date and time
+					%
+					[Date, Time] = string:tokens(lists:nth(1,CreatedAt), "T"),
+					%
+					% Get Y:M:D
+					%
+					[TYear, TMonth, TDay] = string:tokens(Date, "-"),
+					%
+					% Get H:M
+					%
+					[THour, TMinute] = string:tokens(Time, ":"),
+					%
+					% Map values to Integer
+					%
+					IValue = lists:map(fun(X) -> 
+											   list_to_integer(X) 
+									   end, 
+									   [TYear, TMonth, TDay, THour, TMinute]),
+					%
+					% Get data
+					%
+					Year = lists:nth(1, IValue),
+					Month = lists:nth(2, IValue),
+					Day = lists:nth(3, IValue),
+					Hour = lists:nth(4, IValue),
+					Minute = lists:nth(5, IValue),
+					[{Year, Month, Day}, {Hour, Minute}];
+				true ->
+					error
+			end;
+		_ ->
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+								   "obtaining error")
+	end.
+
+%%
+%% @spec is_public(Id) -> Public
+%% @doc -  Gist public or not
+%% @type - Id = Int
+%% @type - Public = atom - true | false
+%%
+is_public(Id) ->
+	TryGetGist = get_gist(Id),
+	case TryGetGist of
+		{ok, "200", _, Content} ->
+			Rstr = string:rstr(Content, "public"),
+			SubString = string:sub_string(Content, Rstr),
+			Tokens = string:tokens(SubString, ":"),
+			%
+			% Form path
+			%
+			list_to_atom(lists:nth(1, string:tokens(lists:nth(2, Tokens), ",")));
 		_ ->
 			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
 								   "obtaining error")
