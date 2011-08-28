@@ -27,6 +27,10 @@ Example for usage, Get gist description:
 1> gist:get_gist_description(1).
 
 ["the meaning of gist"]
+
+2> gist:get_gist_pull_url(1).
+
+["["git://gist.github.com/1.git"]"]
 ```
   
 ## Dependency

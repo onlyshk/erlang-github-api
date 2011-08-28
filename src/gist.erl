@@ -8,6 +8,7 @@
 %%
 %% Exported Functions
 %%
+-export([get_gist_pull_url/1]).
 -export([get_gist_content/1]).
 -export([get_gist_description/1]).
 
@@ -39,9 +40,12 @@ get_gist_content(Id) ->
 		_ ->
 			io:format("Gist getting error")
 	end.
+
 %%
-%% Get gist description
-%% @Id - gist id
+%% @spec get_gist_description(Id) -> ["Description"]
+%% @doc - Get gist description
+%% @type - Id = Int
+%% @type - Description = String
 %%
 get_gist_description(Id) ->
 	GetGist = get_gist(Id),
@@ -54,3 +58,35 @@ get_gist_description(Id) ->
 			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
 								   "obtaining error")
 	end.
+
+%%
+%% @spec get_gist_pull_url(Id) -> ["Url"]
+%% @doc - Get gist pull url
+%% @type - Id = Int
+%% @type - Url = String
+%%
+get_gist_pull_url(Id) ->
+	TryGetGist = get_gist(Id),
+	case TryGetGist of
+		{ok, "200", _, Content} ->
+			%
+			% find git_pull_url tag
+			%
+	    	Rstr = string:rstr(Content, "\"git_pull_url\""),
+			%
+			% Get sub_string to "git_pull_url"
+			%
+			SubString = string:sub_string(Content, Rstr),
+			%
+			% Split by ":"
+			%
+			Tokens = string:tokens(SubString, ":"),
+			%
+			% Form path
+			%
+			Path = lists:nth(1,string:tokens(lists:nth(3, Tokens), ",")),
+			utils:clean_quotes(lists:nth(2, Tokens) ++ ":" ++ Path);
+		_ ->
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+								   "obtaining error")
+	end.	
