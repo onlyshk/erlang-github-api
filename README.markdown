@@ -24,6 +24,7 @@ make
 Example for usage, Get gist description:
 ```
 1> gist:get_gist_description(1).
+
 "\"the meaning of gist\""
 ```
   
