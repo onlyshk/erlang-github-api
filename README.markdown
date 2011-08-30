@@ -45,7 +45,7 @@ true
 Issues - <https://github.com/onlyshk/erlang-github-api>
   
 ## Contribute
- 1) Fork epmail
+ 1) Fork erlang-github-api
  
  2) Write some new features or fix bug
  
