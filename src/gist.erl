@@ -8,6 +8,8 @@
 %%
 %% Exported Functions
 %%
+
+%% gist
 -export([get_gist_pull_url/1]).
 -export([get_gist_content/1]).
 -export([get_gist_description/1]).
@@ -16,7 +18,13 @@
 -export([get_created_time/1]).
 -export([is_public/1]).
 
--define(GIST, "https://api.github.com/gists/").
+%% create | delete | edit gist
+-export([delete_gist/3]).
+
+%% user
+-export([get_gist_user_login/1]).
+
+-include("define.hrl").
 
 %%
 %% API Functions
@@ -32,6 +40,7 @@
 get_gist(Id) ->
 	github:init(),
 	ibrowse:send_req(?GIST ++ integer_to_list(Id),[], get).
+
 %%
 %% Get gist content
 %% @Id - gist id
@@ -48,8 +57,8 @@ get_gist_content(Id) ->
 %%
 %% @spec get_gist_description(Id) -> ["Description"]
 %% @doc - Get gist description
-%% @type - Id = Int
-%% @type - Description = String
+%% @type - Id = Int()
+%% @type - Description = String()
 %%
 get_gist_description(Id) ->
 	GetGist = get_gist(Id),
@@ -66,8 +75,8 @@ get_gist_description(Id) ->
 %%
 %% @spec get_gist_pull_url(Id) -> ["Url"]
 %% @doc - Get gist pull url
-%% @type - Id = Int
-%% @type - Url = String
+%% @type - Id = Int()
+%% @type - Url = String()
 %%
 get_gist_pull_url(Id) ->
 	TryGetGist = get_gist(Id),
@@ -76,7 +85,7 @@ get_gist_pull_url(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    	        Rstr = string:rstr(Content, "\"git_pull_url\""),
+	    		Rstr = string:rstr(Content, "\"git_pull_url\""),
 			%
 			% Get sub_string to "git_pull_url"
 			%
@@ -97,9 +106,9 @@ get_gist_pull_url(Id) ->
 
 %%
 %% @spec get_gist_push_url(Id) -> ["Url"]
-%% @doc - Get gist push url
-%% @type - Id = Int
-%% @type - Url = String
+%% @doc - Get gist push url()
+%% @type - Id = Int()
+%% @type - Url = String()
 %%
 get_gist_push_url(Id) ->
 	TryGetGist = get_gist(Id),
@@ -108,7 +117,7 @@ get_gist_push_url(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    	        Rstr = string:rstr(Content, "\"git_push_url\""),
+	    		Rstr = string:rstr(Content, "\"git_push_url\""),
 			%
 			% Get sub_string to "git_pull_url"
 			%
@@ -129,9 +138,9 @@ get_gist_push_url(Id) ->
 
 %%
 %% @spec get_comments_count(Id) -> CommentsCount
-%% @doc - Get gist comments count
-%% @type - Id = Int
-%% @type - CommentsCount = Int
+%% @doc - Get gist comments count()
+%% @type - Id = Int()
+%% @type - CommentsCount = Int()
 %%
 get_comments_count(Id) ->
 	TryGetGist = get_gist(Id),
@@ -140,7 +149,7 @@ get_comments_count(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    	        Rstr = string:rstr(Content, "\"comments\""),
+	    		Rstr = string:rstr(Content, "\"comments\""),
 			%
 			% Get sub_string to "git_pull_url"
 			%
@@ -165,12 +174,12 @@ get_comments_count(Id) ->
 %%
 %% @spec get_created_time(Id) -> [{Year, Month, Day}, {Hour, Minute}]
 %% @doc - Get created time of this gist
-%% @type - Id = Int
-%% @type - Year = Int
-%% @type - Month = Int
-%% @type - Day = Int
-%% @type - Hour = Int
-%% @type - Minute = Int
+%% @type - Id = Int()
+%% @type - Year = Int()
+%% @type - Month = Int()
+%% @type - Day = Int()
+%% @type - Hour = Int()
+%% @type - Minute = Int()
 %%
 get_created_time(Id) ->
 	TryGetGist = get_gist(Id),
@@ -179,7 +188,7 @@ get_created_time(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    	        Rstr = string:rstr(Content, "created_at"),
+	    	Rstr = string:rstr(Content, "created_at"),
 			ForksRstr = string:rstr(Content, "forks"),
 			if
 				ForksRstr > Rstr ->
@@ -235,8 +244,8 @@ get_created_time(Id) ->
 %%
 %% @spec is_public(Id) -> Public
 %% @doc -  Gist public or not
-%% @type - Id = Int
-%% @type - Public = atom - true | false
+%% @type - Id = Int()
+%% @type - Public = atom() - true | false
 %%
 is_public(Id) ->
 	TryGetGist = get_gist(Id),
@@ -253,3 +262,63 @@ is_public(Id) ->
 			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
 								   "obtaining error")
 	end.	
+
+%%
+%% @spec get_gist_user_login(Id) -> UserName || Anonymous
+%% @doc -  Get author gist
+%% @type - Id = Int()
+%% @type - UserName = String()
+%% @type - Anonymous = String()
+%%
+get_gist_user_login(Id) ->
+	TryGetGist = get_gist(Id),
+	case TryGetGist of
+		{ok, "200", _, Content} ->
+			Rstr = string:rstr(Content, "users"),
+			case Rstr of
+				0 ->
+					NewRstr = string:rstr(Content, "user"),
+					SubString = string:sub_string(Content, NewRstr),
+					Tokens = string:tokens(SubString, ","),
+					Name = lists:last(string:tokens(lists:nth(1,Tokens), ":")),
+					case Name of
+						"null" ->
+							"Anonymous";
+						_ ->
+							Name
+					end;
+            	_ ->
+					SubString = string:sub_string(Content, Rstr),
+					Tokens = string:tokens(SubString, ","),
+				    
+            		UserNameKV = string:tokens(lists:nth(1, Tokens), ":"),
+					UserName = string:tokens(lists:nth(1, UserNameKV), "\""),
+			        Login = lists:nth(2, string:tokens(lists:nth(1, UserName), "/")),
+					case Login of
+						"null" ->
+							"Anonymous";
+						_ ->
+							 Login
+					end
+			end;
+		_ ->
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+								   "obtaining error")
+	end.	
+
+%%
+%% @spec delete_gist(Id, UserName, Password) -> ok
+%% @doc  - Delete gist with id - ID
+%% @type - Id = Int()
+%% @type - UserName - String()
+%% @type - Password - String()
+%% ok - atom()
+%%
+delete_gist(Id, UserName, Password) ->
+	github:init(),
+    	ibrowse:send_req(?GIST ++ integer_to_list(Id), [], delete, [],
+					  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
+					   {ssl_options, [{verify, 0}]}]),
+	ok.
+
+	
