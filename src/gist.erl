@@ -21,6 +21,7 @@
 -export([gist_comment/4]).
 
 %% create | delete | edit gist
+-export([create_gist/6]).
 -export([delete_gist/3]).
 
 %% user
@@ -87,7 +88,7 @@ get_gist_pull_url(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    	Rstr = string:rstr(Content, "\"git_pull_url\""),
+	    		Rstr = string:rstr(Content, "\"git_pull_url\""),
 			%
 			% Get sub_string to "git_pull_url"
 			%
@@ -317,10 +318,29 @@ get_gist_user_login(Id) ->
 %% @type - ok = atom()
 %%
 delete_gist(Id, UserName, Password) ->
-	github:init(),
+    github:init(),
     ibrowse:send_req(?GIST ++ integer_to_list(Id), [], delete, [],
 					  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
 					   {ssl_options, [{verify, 0}, {depth, 3}]}]),
+	ok.
+
+%%
+%% @spec create_gist(UserName, Password, Description, Public, File, Content) -> ok
+%% @doc  - Create new gist
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - Description = String()
+%% @type - Public = Boolean()
+%% @type - File = String()
+%% @type - Content = String()
+%% @type -  ok = atom()
+%%
+create_gist(UserName, Password, Description, Public, File, Content) ->
+	github:init(),
+	MakeMessage = messages:make_create_gist_message(Description, Public, File, Content),
+	ibrowse:send_req(?GISTS, [], post, MakeMessage,
+				  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
+	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
 	ok.
 
 %%
@@ -339,4 +359,3 @@ gist_comment(Id, Username, Password, Message) ->
 				  [{basic_auth, {Username, Password}},{stream_to, self()}, 
 	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
 	ok.
-	

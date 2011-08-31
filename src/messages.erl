@@ -12,6 +12,7 @@
 %% Exported Functions
 %%
 -export([make_gist_comment_message/1]).
+-export([make_create_gist_message/4]).
 
 %%
 %% API Functions
@@ -22,8 +23,34 @@
 %% @doc  - Make json message
 %% @type - Message = String()
 %% @type - Json = String()
+%% @type - error = atom()
 %%
 make_gist_comment_message([]) ->
 	error;
 make_gist_comment_message(Message) ->
 	"{ \"body\":\"" ++ Message ++ "\"}".
+
+%%
+%% @spec make_create_gist_message(Description, Public, File, Content) -> Json
+%% @doc  - Make json message to create new gist
+%% @type - Description = String()
+%% @type - Public = atom()
+%% @type - File = String()
+%% @type - Content = String()
+%% @type - Json = String()
+%% @type - error = atom()
+%%
+make_create_gist_message(_, [], _, _) ->
+	error;
+make_create_gist_message(_, _, [], _) ->
+	error;
+make_create_gist_message(_, _, _, []) ->
+	error;
+make_create_gist_message(Description, Public, File, Content) ->
+    "{ \"description\":" ++ "\"" ++ Description ++ "\"," ++
+        "\"public\":" ++ atom_to_list(Public) ++ "," ++ 
+        "\"files\": {" ++ "\"" ++ File ++ "\"" ++ ": {" ++ 
+              "\"content\":" ++  "\"" ++ Content ++ "\""  ++
+           "} 
+        } 
+    }".

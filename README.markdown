@@ -24,17 +24,34 @@ make
 Example for usage, Get gist description:
 
 ```erlang
+%
+% get gist description
+%
 1> gist:get_gist_description(1).
 
 ["the meaning of gist"]
 
+%
+% get gist pull url
+%
 2> gist:get_gist_pull_url(1).
 
 ["git://gist.github.com/1.git"]
 
+%
+% get gist public or private
+%
 3> gist:is_public(1).
 
 true
+
+%
+% create new gist
+%
+4> gist:create_gist("github_user_name", "password", "Description", true, "file.txt", "Gist content").
+
+>>> ok
+
 ```
   
 ## Dependency
