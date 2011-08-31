@@ -18,6 +18,8 @@
 -export([get_created_time/1]).
 -export([is_public/1]).
 
+-export([gist_comment/4]).
+
 %% create | delete | edit gist
 -export([delete_gist/3]).
 
@@ -85,7 +87,7 @@ get_gist_pull_url(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    		Rstr = string:rstr(Content, "\"git_pull_url\""),
+	    	Rstr = string:rstr(Content, "\"git_pull_url\""),
 			%
 			% Get sub_string to "git_pull_url"
 			%
@@ -188,7 +190,7 @@ get_created_time(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    	Rstr = string:rstr(Content, "created_at"),
+	    		Rstr = string:rstr(Content, "created_at"),
 			ForksRstr = string:rstr(Content, "forks"),
 			if
 				ForksRstr > Rstr ->
@@ -310,15 +312,31 @@ get_gist_user_login(Id) ->
 %% @spec delete_gist(Id, UserName, Password) -> ok
 %% @doc  - Delete gist with id - ID
 %% @type - Id = Int()
-%% @type - UserName - String()
-%% @type - Password - String()
-%% ok - atom()
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - ok = atom()
 %%
 delete_gist(Id, UserName, Password) ->
 	github:init(),
-    	ibrowse:send_req(?GIST ++ integer_to_list(Id), [], delete, [],
+    ibrowse:send_req(?GIST ++ integer_to_list(Id), [], delete, [],
 					  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
-					   {ssl_options, [{verify, 0}]}]),
+					   {ssl_options, [{verify, 0}, {depth, 3}]}]),
 	ok.
 
+%%
+%% @spec gist_comment(Id, Username, Password, Message) -> ok
+%% @doc  - Set comment to gist with id - Id
+%% @type - Id = Int()
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - Message = String()
+%% @type -  ok = atom()
+%%
+gist_comment(Id, Username, Password, Message) ->
+	github:init(),
+	MakeMessage = messages:make_gist_comment_message(Message),
+	ibrowse:send_req(?GIST ++ integer_to_list(Id) ++ "/comments", [], post, MakeMessage,
+				  [{basic_auth, {Username, Password}},{stream_to, self()}, 
+	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
+	ok.
 	

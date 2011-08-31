@@ -4,4 +4,5 @@
 %%
 
 -define(GITHUB, "https://api.github.com").
+-define(GISTS,"https://api.github.com/gists").
 -define(GIST, "https://api.github.com/gists/").

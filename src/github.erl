@@ -18,6 +18,8 @@
 %% Init ssl and ibrowse
 %%
 init() ->
+	application:start(crypto),
+	application:start(ssl),
 	ssl:start(),
 	ibrowse:start().
 
