@@ -18,6 +18,10 @@
 -export([get_created_time/1]).
 -export([is_public/1]).
 
+% gist star
+-export([gist_star/3]).
+-export([gist_unstar/3]).
+
 -export([gist_comment/4]).
 
 %% create | delete | edit gist
@@ -290,13 +294,13 @@ get_gist_user_login(Id) ->
 						_ ->
 							Name
 					end;
-            	_ ->
+            			_ ->
 					SubString = string:sub_string(Content, Rstr),
 					Tokens = string:tokens(SubString, ","),
 				    
-            		UserNameKV = string:tokens(lists:nth(1, Tokens), ":"),
+            				UserNameKV = string:tokens(lists:nth(1, Tokens), ":"),
 					UserName = string:tokens(lists:nth(1, UserNameKV), "\""),
-			        Login = lists:nth(2, string:tokens(lists:nth(1, UserName), "/")),
+			        	Login = lists:nth(2, string:tokens(lists:nth(1, UserName), "/")),
 					case Login of
 						"null" ->
 							"Anonymous";
@@ -318,7 +322,7 @@ get_gist_user_login(Id) ->
 %% @type - ok = atom()
 %%
 delete_gist(Id, UserName, Password) ->
-    github:init(),
+	github:init(),
     ibrowse:send_req(?GIST ++ integer_to_list(Id), [], delete, [],
 					  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
 					   {ssl_options, [{verify, 0}, {depth, 3}]}]),
@@ -358,4 +362,34 @@ gist_comment(Id, Username, Password, Message) ->
 	ibrowse:send_req(?GIST ++ integer_to_list(Id) ++ "/comments", [], post, MakeMessage,
 				  [{basic_auth, {Username, Password}},{stream_to, self()}, 
 	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
+	ok.
+
+%%
+%% @spec gist_star(Id, UserName, Password) -> ok
+%% @doc - Star gist
+%% @type - Id = Int()
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - ok = atom()
+%%
+gist_star(Id, UserName, Password) ->
+	github:init(),
+	ibrowse:send_req(?GIST ++ integer_to_list(Id) ++ "/star", [], put, [],
+		 		    [{basic_auth, {UserName, Password}},{stream_to, self()}, 
+					{ssl_options, [{verify, 0}, {depth, 3}]}]),
+	ok.
+
+%%
+%% @spec gist_unstar(Id, UserName, Password) -> ok
+%% @doc - Unstar gist
+%% @type - Id = Int()
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - ok = atom()
+%%
+gist_unstar(Id, UserName, Password) ->
+	github:init(),
+	ibrowse:send_req(?GIST ++ integer_to_list(Id) ++ "/star", [], delete, [],
+		 		    [{basic_auth, {UserName, Password}},{stream_to, self()}, 
+					{ssl_options, [{verify, 0}, {depth, 3}]}]),
 	ok.
