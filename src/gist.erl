@@ -14,7 +14,6 @@
 -export([get_gist_content/1]).
 -export([get_gist_description/1]).
 -export([get_gist_push_url/1]).
--export([get_comments_count/1]).
 -export([get_created_time/1]).
 -export([is_public/1]).
 
@@ -22,7 +21,14 @@
 -export([gist_star/3]).
 -export([gist_unstar/3]).
 
+% gist comments
+-export([gist_edit_comment/4]).
 -export([gist_comment/4]).
+-export([gist_delete_comment/3]).
+-export([get_comments_count/1]).
+
+% fork gist
+-export([fork_gist/3]).
 
 %% create | delete | edit gist
 -export([create_gist/6]).
@@ -138,41 +144,6 @@ get_gist_push_url(Id) ->
 			%
 			Path = lists:nth(1,string:tokens(lists:nth(3, Tokens), ",")),
 			utils:clean_quotes(lists:nth(2, Tokens) ++ ":" ++ Path);
-		_ ->
-			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
-								   "obtaining error")
-	end.
-
-%%
-%% @spec get_comments_count(Id) -> CommentsCount
-%% @doc - Get gist comments count()
-%% @type - Id = Int()
-%% @type - CommentsCount = Int()
-%%
-get_comments_count(Id) ->
-	TryGetGist = get_gist(Id),
-	case TryGetGist of
-		{ok, "200", _, Content} ->
-			%
-			% find git_pull_url tag
-			%
-	    		Rstr = string:rstr(Content, "\"comments\""),
-			%
-			% Get sub_string to "git_pull_url"
-			%
-			SubString = string:sub_string(Content, Rstr),
-			%
-			% Split by ":"
-			%
-			Tokens = string:tokens(SubString, ":"),
-			%
-			% Form path
-			%
-			Path = lists:nth(1,string:tokens(lists:nth(3, Tokens), ",")),
-			CountWithGb = utils:clean_quotes(lists:nth(2, Tokens) ++ ":" ++ Path),
-			Comments = lists:nth(1,string:tokens(lists:nth(1, CountWithGb), ",")),
-		    {CommentsCount, _} = string:to_integer(Comments),
-			CommentsCount;
 		_ ->
 			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
 								   "obtaining error")
@@ -300,7 +271,7 @@ get_gist_user_login(Id) ->
 				    
             				UserNameKV = string:tokens(lists:nth(1, Tokens), ":"),
 					UserName = string:tokens(lists:nth(1, UserNameKV), "\""),
-			        	Login = lists:nth(2, string:tokens(lists:nth(1, UserName), "/")),
+			        Login = lists:nth(2, string:tokens(lists:nth(1, UserName), "/")),
 					case Login of
 						"null" ->
 							"Anonymous";
@@ -322,7 +293,7 @@ get_gist_user_login(Id) ->
 %% @type - ok = atom()
 %%
 delete_gist(Id, UserName, Password) ->
-	github:init(),
+    github:init(),
     ibrowse:send_req(?GIST ++ integer_to_list(Id), [], delete, [],
 					  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
 					   {ssl_options, [{verify, 0}, {depth, 3}]}]),
@@ -344,23 +315,6 @@ create_gist(UserName, Password, Description, Public, File, Content) ->
 	MakeMessage = messages:make_create_gist_message(Description, Public, File, Content),
 	ibrowse:send_req(?GISTS, [], post, MakeMessage,
 				  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
-	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
-	ok.
-
-%%
-%% @spec gist_comment(Id, Username, Password, Message) -> ok
-%% @doc  - Set comment to gist with id - Id
-%% @type - Id = Int()
-%% @type - UserName = String()
-%% @type - Password = String()
-%% @type - Message = String()
-%% @type -  ok = atom()
-%%
-gist_comment(Id, Username, Password, Message) ->
-	github:init(),
-	MakeMessage = messages:make_gist_comment_message(Message),
-	ibrowse:send_req(?GIST ++ integer_to_list(Id) ++ "/comments", [], post, MakeMessage,
-				  [{basic_auth, {Username, Password}},{stream_to, self()}, 
 	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
 	ok.
 
@@ -392,4 +346,107 @@ gist_unstar(Id, UserName, Password) ->
 	ibrowse:send_req(?GIST ++ integer_to_list(Id) ++ "/star", [], delete, [],
 		 		    [{basic_auth, {UserName, Password}},{stream_to, self()}, 
 					{ssl_options, [{verify, 0}, {depth, 3}]}]),
+	ok.
+
+%%
+%% @spec fork_gist(Id, UserName, Password) -> ok
+%% @doc - fork gist by id
+%% @type - Id = Int()
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - ok = atom()
+%%
+fork_gist(Id, UserName, Password) ->
+	github:init(),
+	ibrowse:send_req(?GIST ++ integer_to_list(Id) ++ "/fork", [], post, [],
+		 		    [{basic_auth, {UserName, Password}},{stream_to, self()}, 
+					{ssl_options, [{verify, 0}, {depth, 3}]}]),
+	ok.
+
+%%==============================================
+%%             Github Gist comments
+%%==============================================
+%%
+%% @spec get_comments_count(Id) -> CommentsCount
+%% @doc - Get gist comments count()
+%% @type - Id = Int()
+%% @type - CommentsCount = Int()
+%%
+get_comments_count(Id) ->
+	TryGetGist = get_gist(Id),
+	case TryGetGist of
+		{ok, "200", _, Content} ->
+			%
+			% find git_pull_url tag
+			%
+	    	Rstr = string:rstr(Content, "\"comments\""),
+			%
+			% Get sub_string to "git_pull_url"
+			%
+			SubString = string:sub_string(Content, Rstr),
+			%
+			% Split by ":"
+			%
+			Tokens = string:tokens(SubString, ":"),
+			%
+			% Form path
+			%
+			Path = lists:nth(1,string:tokens(lists:nth(3, Tokens), ",")),
+			CountWithGb = utils:clean_quotes(lists:nth(2, Tokens) ++ ":" ++ Path),
+			Comments = lists:nth(1,string:tokens(lists:nth(1, CountWithGb), ",")),
+		    {CommentsCount, _} = string:to_integer(Comments),
+			CommentsCount;
+		_ ->
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+								   "obtaining error")
+	end.
+
+
+%%
+%% @spec gist_comment(Id, Username, Password, Message) -> ok
+%% @doc  - Set comment to gist with id - Id
+%% @type - Id = Int()
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - Message = String()
+%% @type -  ok = atom()
+%%
+gist_comment(Id, Username, Password, Message) ->
+	github:init(),
+	MakeMessage = messages:make_gist_comment_message(Message),
+	ibrowse:send_req(?GIST ++ integer_to_list(Id) ++ "/comments", [], post, MakeMessage,
+				  [{basic_auth, {Username, Password}},{stream_to, self()}, 
+	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
+	ok.
+
+%%
+%% @spec gist_edit_comment(Id, Username, Password, NewComment) -> ok
+%% @doc  - Edit comment with id - Id
+%% @type - Id = Int()
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - NewComment = String()
+%% @type -  ok = atom()
+%%
+gist_edit_comment(Id, Username, Password, NewComment) ->
+    github:init(),
+    EditComment = messages:make_gist_comment_message(NewComment),
+	ibrowse:send_req(?GIST ++ "comments/" ++ integer_to_list(Id), [], post, EditComment,
+			  [{basic_auth, {Username, Password}},{stream_to, self()}, 
+	   		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
+	ok.
+
+%%
+%% @spec gist_delete_comment(Id, Username, Password) -> ok
+%% @doc  - Delete gist comment with id - Id
+%% @type - Id = Int()
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type -  ok = atom()
+%%
+gist_delete_comment(Id, Username, Password) ->
+	github:init(),
+	ibrowse:send_req(?GIST ++ "comments/" ++ integer_to_list(Id), [], delete, [],
+				  [{basic_auth, {Username, Password}},{stream_to, self()}, 
+	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
 	ok.
