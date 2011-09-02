@@ -16,6 +16,7 @@
 -export([get_gist_push_url/1]).
 -export([get_created_time/1]).
 -export([is_public/1]).
+-export([get_content_size/1]).
 
 % gist star
 -export([gist_star/3]).
@@ -55,16 +56,41 @@ get_gist(Id) ->
 	ibrowse:send_req(?GIST ++ integer_to_list(Id),[], get).
 
 %%
-%% Get gist content
-%% @Id - gist id
+%% @spec get_content_size(Id) -> Size
+%% @doc - Get gist content size
+%% @type - Id = Int()
+%% @type - Size = Int()
+%%
+get_content_size(Id) ->
+	GetGist = get_gist(Id),
+	case GetGist of
+		{ok, "200", _, Content} ->
+			Rstr = string:rstr(Content, "\"size\""),
+			SubString = string:sub_string(Content, Rstr),
+			Tokens = string:tokens(SubString, ":"),
+			list_to_integer(lists:nth(1, string:tokens(lists:nth(2, Tokens), ",")));
+		_ ->
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+			  				       "obtaining error")
+	end.
+
+%%
+%% @spec get_gist_content(Id) -> Content
+%% @doc - Get gist content
+%% @type - Id = Int()
+%% @type - Content = String()
 %%
 get_gist_content(Id) ->
 	GetGist = get_gist(Id),
 	case GetGist of
 		{ok, "200", _, Content} ->
-			Content;
+			FlatContent = lists:flatten(Content),
+			Size = get_content_size(Id),
+			Rstr1 = string:rstr(Content, "\"content\""),
+			string:sub_string(FlatContent, Rstr1 + 11, Rstr1 + 11 + Size);
 		_ ->
-			io:format("Gist getting error")
+			error_logger:error_msg("Gist with ID: " ++ integer_to_list(Id) ++ " " ++
+								   "obtaining error")
 	end.
 
 %%
@@ -98,7 +124,7 @@ get_gist_pull_url(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    		Rstr = string:rstr(Content, "\"git_pull_url\""),
+	    	        Rstr = string:rstr(Content, "\"git_pull_url\""),
 			%
 			% Get sub_string to "git_pull_url"
 			%
@@ -271,7 +297,7 @@ get_gist_user_login(Id) ->
 				    
             				UserNameKV = string:tokens(lists:nth(1, Tokens), ":"),
 					UserName = string:tokens(lists:nth(1, UserNameKV), "\""),
-			        Login = lists:nth(2, string:tokens(lists:nth(1, UserName), "/")),
+			        	Login = lists:nth(2, string:tokens(lists:nth(1, UserName), "/")),
 					case Login of
 						"null" ->
 							"Anonymous";
@@ -293,7 +319,7 @@ get_gist_user_login(Id) ->
 %% @type - ok = atom()
 %%
 delete_gist(Id, UserName, Password) ->
-    github:init(),
+	github:init(),
     ibrowse:send_req(?GIST ++ integer_to_list(Id), [], delete, [],
 					  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
 					   {ssl_options, [{verify, 0}, {depth, 3}]}]),
