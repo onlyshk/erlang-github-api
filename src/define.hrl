@@ -3,6 +3,17 @@
 %%All rights reserved.
 %%
 
+%
+% Github api url
+%
 -define(GITHUB, "https://api.github.com").
--define(GISTS,"https://api.github.com/gists").
+
+%
+% Gist url
+%
 -define(GIST, "https://api.github.com/gists/").
+
+%
+% User url
+%
+-define(USERS, "https://api.github.com/users/").

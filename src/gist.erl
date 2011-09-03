@@ -21,6 +21,7 @@
 % gist star
 -export([gist_star/3]).
 -export([gist_unstar/3]).
+-export([is_gist_stared/3]).
 
 % gist comments
 -export([gist_edit_comment/4]).
@@ -124,7 +125,7 @@ get_gist_pull_url(Id) ->
 			%
 			% find git_pull_url tag
 			%
-	    	        Rstr = string:rstr(Content, "\"git_pull_url\""),
+	    		Rstr = string:rstr(Content, "\"git_pull_url\""),
 			%
 			% Get sub_string to "git_pull_url"
 			%
@@ -339,7 +340,7 @@ delete_gist(Id, UserName, Password) ->
 create_gist(UserName, Password, Description, Public, File, Content) ->
 	github:init(),
 	MakeMessage = messages:make_create_gist_message(Description, Public, File, Content),
-	ibrowse:send_req(?GISTS, [], post, MakeMessage,
+	ibrowse:send_req(?GIST, [], post, MakeMessage,
 				  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
 	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
 	ok.
@@ -373,6 +374,27 @@ gist_unstar(Id, UserName, Password) ->
 		 		    [{basic_auth, {UserName, Password}},{stream_to, self()}, 
 					{ssl_options, [{verify, 0}, {depth, 3}]}]),
 	ok.
+
+%%
+%% @spec is_gist_stared(Id, UserName, Password) -> Boolean
+%% @doc -  Check stared gist or not
+%% @type - Id = Int()
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - Boolean = atom() == true || false
+%%
+is_gist_stared(Id, UserName, Password) ->
+	github:init(),
+	Response = ibrowse:send_req(?GIST ++ integer_to_list(Id) ++ "/star", [], delete, [],
+		 			    	   [{basic_auth, {UserName, Password}},
+						       {ssl_options, [{verify, 0}, {depth, 3}]}]),
+	{_, Code, _, _} = Response,
+	case Code of
+		"204" ->
+			true;
+		_ ->
+			false
+	end.
 
 %%
 %% @spec fork_gist(Id, UserName, Password) -> ok
