@@ -19,6 +19,12 @@
 -export([get_user_public_repos_count/3]).
 
 %%
+%% User followers
+%%
+-export([follow_user/3]).
+-export([unfollow_user/3]).
+
+%%
 %% User email
 %%
 -export([user_delete_email_address/3]).
@@ -226,6 +232,38 @@ user_add_email_address(Address, UserName, Password) ->
 user_delete_email_address(Address, UserName, Password) ->
 	MakeAdress = messages:make_add_email_message(Address),
 	ibrowse:send_req(?USERS ++ "emails", [], delete, MakeAdress,
+				  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
+	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
+	ok.
+
+%%==============================================
+%%             Github User followers
+%%==============================================
+
+%%
+%% @spec follow_user(User, UserName, Password) -> ok
+%% @doc -  Follow user
+%% @type - User = String()
+%% @type - UserName = Strng()
+%% @type - Password = String()
+%% @type - ok = atom()
+%%
+follow_user(User, UserName, Password) ->
+	ibrowse:send_req(?USERS ++ "/following/" ++ User, [], put, [],
+				  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
+	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
+	ok.
+
+%%
+%% @spec unfollow_user(User, UserName, Password) -> ok
+%% @doc -  Unfollow user
+%% @type - User = String()
+%% @type - UserName = Strng()
+%% @type - Password = String()
+%% @type - ok = atom()
+%%
+unfollow_user(User, UserName, Password) ->
+	ibrowse:send_req(?USERS ++ "/following/" ++ User, [], delete, [],
 				  [{basic_auth, {UserName, Password}},{stream_to, self()}, 
 	    		   {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
 	ok.
