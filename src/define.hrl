@@ -14,6 +14,16 @@
 -define(GIST, "https://api.github.com/gists/").
 
 %
-% User url
+% User api
+%
+-define(USER, "https://api.github.com/user/").
+
+%
+% Users api url
 %
 -define(USERS, "https://api.github.com/users/").
+
+%
+% Blob url
+%
+-define(REPOS, "https://api.github.com/repos/").
