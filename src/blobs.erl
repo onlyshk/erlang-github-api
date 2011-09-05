@@ -7,6 +7,7 @@
 
 -export([get_blob_encoding/5]).
 -export([get_blob_content/5]).
+-export([create_blob/6]).
 
 -include("define.hrl").
 
@@ -62,3 +63,22 @@ get_blob_encoding(UserName, Password, User, Repo, Sha) ->
 			error_logger:error_msg("Blob with " ++ Sha ++  " " ++ 
 									   "obtaining error")
 	end.
+
+%%
+%% @spec create_blob(UserName, Password, User, Repo, Content, Encoding) -> ok
+%% @doc -  Create blob
+%% @type - UserName = String()
+%% @type - Password = String()
+%% @type - User = String()
+%% @type - Content = String()
+%% @type - Encoding = String()
+%% @type - ok = atom()
+%%
+create_blob(UserName, Password, User, Repo, Content, Encoding) ->
+	github:init(),
+	MakeMessage = messages:make_blob_message(Content, Encoding),
+	ibrowse:send_req(?REPOS  ++ User ++ "/" ++ Repo ++ "/git/blobs" , [], post, MakeMessage,
+				     [{basic_auth, {UserName, Password}},{stream_to, self()}, 
+	    		     {ssl_options, [{verify,verify_none}, {depth, 3}]}]),
+	ok.
+	

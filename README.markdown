@@ -5,6 +5,17 @@ Wrapper for github.com API written in Erlang.
 ## Status
 The erlang-github-api project in very very early stage, it's only started to be developed.
 
+## Implemented
+
+  * github.erl - general github api.  -> progress  - 100%
+  * auth.erl - authorization api. -> progrss - 50% (implemented basic auth)
+  * blobs.erl - blob api -> progress - 100% (implemeted get blob content, encoding, create new blob)
+  * define.hrl - github api urls
+  * gist.erl - github gist api -> progress 90% (implemented star, unstar, createe new gist, delete, get author, get content ...)
+  * messages.erl - make message to json format
+  * user.erl - github user api -> progress 90% (implmenented get user, get user data: email, login, bio, location and etc ...)
+  * utils.erl - utils functions
+
 ## Features
 
   * Support Gists
