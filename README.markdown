@@ -68,6 +68,7 @@ true
 ## Dependency
 
   * Ibrowse (https://github.com/cmullaparthi/ibrowse)
+  * Thank you lambder for json.er and json.hrl (https://github.com/lambder/jsonerl)
   
 ## erlang-github-api TODO and Issues
 Issues - <https://github.com/onlyshk/erlang-github-api>
