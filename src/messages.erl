@@ -15,6 +15,7 @@
 -export([make_add_email_message/1]).
 -export([make_create_gist_message/4]).
 -export([make_blob_message/2]).
+-export([make_ref_message/2]).
 
 %%
 %% API Functions
@@ -84,3 +85,19 @@ make_blob_message(_, []) ->
 make_blob_message(Content, Encoding) ->
 	"{" ++ "\"content\":" ++ "\"" ++ Content ++ "\"," ++ 
 		   "\"encoding\":" ++ "\"" ++ Encoding ++ "\"}".
+
+%%
+%% @spec make_ref_message(Ref, Sha) -> Json
+%% @doc  - Create new ref
+%% @type - Ref = String()
+%% @type - Sha = String()
+%% @type - Json = String()
+%% @type - error = atom()
+%%
+make_ref_message([], _) ->
+	error;
+make_ref_message(_, []) ->
+	error;
+make_ref_message(Ref, Sha) ->
+	"{" ++ "\"ref\":" ++ "\"" ++ Ref ++ "\"," ++ 
+		   "\"sha\":" ++ "\"" ++ Sha ++ "\"}".

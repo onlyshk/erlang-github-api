@@ -13,6 +13,7 @@ The erlang-github-api project in very very early stage, it's only started to be 
   * define.hrl - github api urls
   * gist.erl - github gist api -> progress 90% (implemented star, unstar, createe new gist, delete, get author, get content ...)
   * messages.erl - make message to json format
+  * refs.erl - references -> progress 50% (implemented create ref)
   * user.erl - github user api -> progress 90% (implmenented get user, get user data: email, login, bio, location and etc ...)
   * utils.erl - utils functions
 
