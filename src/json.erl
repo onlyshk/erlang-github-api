@@ -1,4 +1,4 @@
--module(jsonerl).
+-module(json).
 
 -export([encoder/1, encode/1]).
 -export([decoder/1, decode/1]).
