@@ -1,0 +1,9 @@
+%% -*- mode: erlang -*-
+{application, erlang_github_api,
+ [{description, ""},
+  {vsn, "0.1"},
+  {modules, [
+            ]},
+  {applications, [kernel, stdlib]},
+  {registered, []}
+ ]}.
